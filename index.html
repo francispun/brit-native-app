@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brit-Native 🇬🇧</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .message { max-width: 80%; }
+  </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col">
+  <div class="max-w-2xl mx-auto w-full p-4 flex-1 flex flex-col">
+    
+    <!-- Header -->
+    <header class="py-6 border-b border-gray-800 flex items-center justify-between">
+      <h1 class="text-3xl font-semibold flex items-center gap-3">
+        🇬🇧 Brit-Native
+        <span class="text-sm bg-green-600 px-3 py-1 rounded-full text-xs">B1/B2 Coach</span>
+      </h1>
+      <button id="signoutBtn" onclick="signOut()" class="text-sm text-gray-400 hover:text-white hidden">Sign out</button>
+    </header>
+
+    <!-- Auth Screen -->
+    <div id="authScreen" class="flex-1 flex items-center justify-center">
+      <div class="text-center max-w-xs">
+        <h2 class="text-2xl mb-8">Welcome to Brit-Native</h2>
+        <input id="emailInput" type="email" placeholder="your@email.com" 
+               class="block w-full bg-gray-900 border border-gray-700 rounded-3xl px-6 py-4 mb-4 outline-none text-center">
+        <button onclick="sendMagicLink()" 
+                class="bg-pink-600 hover:bg-pink-700 w-full py-4 rounded-3xl font-medium">
+          Send Magic Link
+        </button>
+        <p class="text-xs text-gray-500 mt-6">We'll email you a secure link to sign in</p>
+      </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chatScreen" class="hidden flex-1 flex flex-col">
+      <div id="chat" class="flex-1 overflow-y-auto py-8 space-y-6"></div>
+      
+      <div class="pt-4 border-t border-gray-800">
+        <div class="flex gap-3">
+          <input id="messageInput" type="text" 
+                 class="flex-1 bg-gray-900 border border-gray-700 rounded-3xl px-6 py-4 outline-none focus:border-pink-500"
+                 placeholder="Type here... (e.g. Tell me about your day)">
+          <button onclick="sendMessage()" 
+                  class="bg-pink-600 hover:bg-pink-700 px-8 rounded-3xl font-medium">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ================== CONFIGURATION (will be replaced by Vercel) ==================
+    // Leave these as placeholders for now
+    const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+    const SUPABASE_ANON_KEY = "your-anon-public-key-here";
+
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/brit-native-chat`;
+
+    let currentUser = null;
+
+    const authScreen = document.getElementById('authScreen');
+    const chatScreen = document.getElementById('chatScreen');
+    const chatDiv = document.getElementById('chat');
+    const messageInput = document.getElementById('messageInput');
+
+    async function sendMagicLink() {
+      const email = document.getElementById('emailInput').value.trim();
+      if (!email) return alert("Please enter your email");
+
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) alert("Error: " + error.message);
+      else alert("Magic link sent! Please check your email and click the link.");
+    }
+
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        showChat();
+      }
+    }
+
+    function showChat() {
+      authScreen.classList.add('hidden');
+      chatScreen.classList.remove('hidden');
+      document.getElementById('signoutBtn').classList.remove('hidden');
+      
+      addMessage('assistant', `Hello mate! I'm Brit-Native, your friendly British English coach. Ready to practise for UK citizenship? What's on your mind today?`);
+    }
+
+    function addMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+      div.innerHTML = `
+        <div class="message px-5 py-3 rounded-3xl ${role === 'user' ? 'bg-blue-600' : 'bg-gray-800'}">
+          ${content.replace(/\n/g, '<br>')}
+        </div>
+      `;
+      chatDiv.appendChild(div);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text || !currentUser) return;
+
+      addMessage('user', text);
+      const tempText = text;
+      messageInput.value = '';
+
+      try {
+        const res = await fetch(FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            user_id: currentUser.id,
+            message: tempText
+          })
+        });
+
+        const data = await res.json();
+        addMessage('assistant', data.reply || "Sorry, something went wrong mate.");
+      } catch (err) {
+        addMessage('assistant', "Couldn't reach the server. Please check your Supabase URL and anon key.");
+      }
+    }
+
+    function signOut() {
+      supabase.auth.signOut();
+      location.reload();
+    }
+
+    // Listen for auth state changes (magic link)
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        currentUser = session.user;
+        showChat();
+      }
+    });
+
+    // Start the app
+    window.onload = checkAuth;
+  </script>
+</body>
+</html>
