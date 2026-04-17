@@ -21,8 +21,7 @@
         🇬🇧 Brit-Native
         <span class="text-sm bg-green-600 px-3 py-1 rounded-full text-xs">B1/B2 Coach</span>
       </h1>
-      <button id="signoutBtn" onclick="signOut()" 
-              class="text-sm text-gray-400 hover:text-white hidden">Sign out</button>
+      <button id="signoutBtn" onclick="signOut()" class="text-sm text-gray-400 hover:text-white hidden">Sign out</button>
     </header>
 
     <!-- Auth Screen -->
@@ -31,8 +30,7 @@
         <h2 class="text-2xl mb-8">Welcome to Brit-Native</h2>
         <input id="emailInput" type="email" placeholder="your@email.com"
                class="block w-full bg-gray-900 border border-gray-700 rounded-3xl px-6 py-4 mb-4 outline-none text-center focus:border-pink-500">
-        <button onclick="sendMagicLink()"
-                class="bg-pink-600 hover:bg-pink-700 w-full py-4 rounded-3xl font-medium transition-colors">
+        <button onclick="sendMagicLink()" class="bg-pink-600 hover:bg-pink-700 w-full py-4 rounded-3xl font-medium transition-colors">
           Send Magic Link
         </button>
         <p class="text-xs text-gray-500 mt-6">We'll email you a secure link to sign in</p>
@@ -47,46 +45,30 @@
         <div class="flex gap-3">
           <input id="messageInput" type="text" 
                  class="flex-1 bg-gray-900 border border-gray-700 rounded-3xl px-6 py-4 outline-none focus:border-pink-500"
-                 placeholder="Type here..." onkeydown="if(event.key === 'Enter') sendMessage()">
-          <button onclick="sendMessage()"
-                  class="bg-pink-600 hover:bg-pink-700 px-8 rounded-3xl font-medium transition-colors">Send</button>
+                 placeholder="Type here..." onkeydown="if(event.key==='Enter') sendMessage()">
+          <button onclick="sendMessage()" class="bg-pink-600 hover:bg-pink-700 px-8 rounded-3xl font-medium transition-colors">Send</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ================== SUPABASE CONFIG ==================
-    // These will be replaced automatically by Vercel if you set env vars
-    const SUPABASE_URL = "https://your-project.supabase.co".replace("your-project", "YOUR_ACTUAL_PROJECT_ID");
-    const SUPABASE_ANON_KEY = "your-anon-key-here";
+    // ================== ←←← PUT YOUR REAL KEYS HERE ←←← ==================
+    const SUPABASE_URL = "https://ereylbzqfrtoyccrsaub.supabase.co";     // ← Change this
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZXlsYnpxZnJ0b3ljY3JzYXViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNjI4MTgsImV4cCI6MjA4NzYzODgxOH0.1nGuHJk2efetxqHRahPk2rxJB_9DWM9uA9d7nvLwqIc";       // ← Change this
 
-    // Better way for Vercel: Use environment variables (recommended)
-    // Vercel injects these if you name them correctly
-    const finalSupabaseUrl = import.meta.env?.VITE_SUPABASE_URL || 
-                             window.VITE_SUPABASE_URL || 
-                             SUPABASE_URL;
-    const finalSupabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 
-                             window.VITE_SUPABASE_ANON_KEY || 
-                             SUPABASE_ANON_KEY;
-
-    if (!finalSupabaseUrl || finalSupabaseUrl.includes("your-project") || 
-        !finalSupabaseKey || finalSupabaseKey.includes("your-anon-key")) {
+    if (SUPABASE_URL.includes("YOUR_PROJECT_ID") || SUPABASE_ANON_KEY.includes("your-anon-key")) {
       document.body.innerHTML = `
-        <div class="flex items-center justify-center min-h-screen bg-gray-950 text-red-400 p-8 text-center">
-          <div>
-            <h2 class="text-2xl mb-4">Configuration Error</h2>
-            <p>Please set these environment variables in Vercel:</p>
-            <ul class="text-left mt-4 space-y-2">
-              <li><strong>VITE_SUPABASE_URL</strong></li>
-              <li><strong>VITE_SUPABASE_ANON_KEY</strong></li>
-            </ul>
+        <div class="flex min-h-screen items-center justify-center bg-gray-950 text-red-400 p-8 text-center">
+          <div class="max-w-md">
+            <h2 class="text-2xl font-bold mb-4">Configuration Missing</h2>
+            <p>Please replace SUPABASE_URL and SUPABASE_ANON_KEY with your real Supabase values in the HTML file.</p>
           </div>
         </div>`;
       throw new Error("Missing Supabase credentials");
     }
 
-    const supabase = Supabase.createClient(finalSupabaseUrl, finalSupabaseKey);
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let currentUser = null;
 
     const authScreen = document.getElementById('authScreen');
@@ -111,7 +93,6 @@
       authScreen.classList.add('hidden');
       chatScreen.classList.remove('hidden');
       document.getElementById('signoutBtn').classList.remove('hidden');
-
       window.addMessage('assistant', `Hello mate! 👋 I'm Brit-Native, your friendly British English coach.\n\nReady to practise for your UK citizenship? What's on your mind today?`);
     };
 
@@ -132,19 +113,18 @@
       if (!text || !currentUser) return;
 
       window.addMessage('user', text);
-      const tempText = text;
       messageInput.value = '';
 
       try {
-        const res = await fetch(`${finalSupabaseUrl}/functions/v1/brit-native-chat`, {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/brit-native-chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${finalSupabaseKey}`
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({
             user_id: currentUser.id,
-            message: tempText
+            message: text
           })
         });
 
@@ -152,7 +132,7 @@
         window.addMessage('assistant', data.reply || "Sorry mate, something went wrong.");
       } catch (err) {
         console.error(err);
-        window.addMessage('assistant', "Couldn't connect to the server. Please try again.");
+        window.addMessage('assistant', "Couldn't connect to the server.");
       }
     };
 
@@ -161,8 +141,8 @@
       location.reload();
     };
 
-    // Initialize app
-    async function initApp() {
+    // Start the app
+    async function init() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         currentUser = session.user;
@@ -173,15 +153,11 @@
         if (session) {
           currentUser = session.user;
           window.showChat();
-        } else {
-          authScreen.classList.remove('hidden');
-          chatScreen.classList.add('hidden');
-          document.getElementById('signoutBtn').classList.add('hidden');
         }
       });
     }
 
-    window.onload = initApp;
+    window.onload = init;
   </script>
 </body>
 </html>
