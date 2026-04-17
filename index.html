@@ -53,11 +53,13 @@
   </div>
 
   <script>
-    // These will be replaced by Vercel at deploy time
+    // ================== VERCEL PLACEHOLDERS ==================
+    // These will be replaced automatically by Vercel
     const SUPABASE_URL = "%%SUPABASE_URL%%";
     const SUPABASE_ANON_KEY = "%%SUPABASE_ANON_KEY%%";
 
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Create Supabase client once
+    const supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/brit-native-chat`;
 
     let currentUser = null;
@@ -67,42 +69,48 @@
     const chatDiv = document.getElementById('chat');
     const messageInput = document.getElementById('messageInput');
 
-    async function sendMagicLink() {
+    // Make functions global so onclick works
+    window.sendMagicLink = async function() {
       const email = document.getElementById('emailInput').value.trim();
       if (!email) return alert("Please enter your email");
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) alert("Error: " + error.message);
-      else alert("Magic link sent! Check your email.");
-    }
 
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { error } = await supabaseClient.auth.signInWithOtp({ email });
+      if (error) alert("Error: " + error.message);
+      else alert("Magic link sent! Check your email and click the link.");
+    };
+
+    window.checkAuth = async function() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         currentUser = session.user;
-        showChat();
+        window.showChat();
       }
-    }
+    };
 
-    function showChat() {
+    window.showChat = function() {
       authScreen.classList.add('hidden');
       chatScreen.classList.remove('hidden');
       document.getElementById('signoutBtn').classList.remove('hidden');
-      addMessage('assistant', `Hello mate! I'm Brit-Native. Ready to practise British English for UK citizenship? What's on your mind?`);
-    }
+      window.addMessage('assistant', `Hello mate! I'm Brit-Native, your friendly British English coach. Ready to practise for UK citizenship? What's on your mind today?`);
+    };
 
-    function addMessage(role, content) {
+    window.addMessage = function(role, content) {
       const div = document.createElement('div');
       div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-      div.innerHTML = `<div class="message px-5 py-3 rounded-3xl ${role === 'user' ? 'bg-blue-600' : 'bg-gray-800'}">${content.replace(/\n/g, '<br>')}</div>`;
+      div.innerHTML = `
+        <div class="message px-5 py-3 rounded-3xl ${role === 'user' ? 'bg-blue-600' : 'bg-gray-800'}">
+          ${content.replace(/\n/g, '<br>')}
+        </div>
+      `;
       chatDiv.appendChild(div);
       chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
+    };
 
-    async function sendMessage() {
+    window.sendMessage = async function() {
       const text = messageInput.value.trim();
       if (!text || !currentUser) return;
 
-      addMessage('user', text);
+      window.addMessage('user', text);
       const tempText = text;
       messageInput.value = '';
 
@@ -113,29 +121,35 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({ user_id: currentUser.id, message: tempText })
+          body: JSON.stringify({
+            user_id: currentUser.id,
+            message: tempText
+          })
         });
+
         const data = await res.json();
-        addMessage('assistant', data.reply || "Sorry, something went wrong.");
+        window.addMessage('assistant', data.reply || "Sorry, something went wrong mate.");
       } catch (err) {
         console.error(err);
-        addMessage('assistant', "Connection error – please check deployment.");
+        window.addMessage('assistant', "Couldn't connect to the server.");
       }
-    }
+    };
 
-    function signOut() {
-      supabase.auth.signOut();
+    window.signOut = function() {
+      supabaseClient.auth.signOut();
       location.reload();
-    }
+    };
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    // Auth state listener
+    supabaseClient.auth.onAuthStateChange((event, session) => {
       if (session) {
         currentUser = session.user;
-        showChat();
+        window.showChat();
       }
     });
 
-    window.onload = checkAuth;
+    // Start the app
+    window.onload = window.checkAuth;
   </script>
 </body>
 </html>
