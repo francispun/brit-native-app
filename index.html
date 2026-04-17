@@ -53,14 +53,20 @@
   </div>
 
   <script>
-    // ================== VERCEL PLACEHOLDERS ==================
-    // These will be replaced automatically by Vercel
-    const SUPABASE_URL = "%%SUPABASE_URL%%";
-    const SUPABASE_ANON_KEY = "%%SUPABASE_ANON_KEY%%";
+    // ================== CONFIGURATION ==================
+    // Replace these with your actual Supabase credentials from your Supabase project
+    const SUPABASE_URL = "https://your-project.supabase.co";
+    const SUPABASE_ANON_KEY = "your-anon-key-here";
+    const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/brit-native-chat`;
+
+    // Validate that credentials are configured
+    if (!SUPABASE_URL || SUPABASE_URL.includes("%%") || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("%%")) {
+      console.error("Error: Supabase credentials not configured. Please update SUPABASE_URL and SUPABASE_ANON_KEY");
+      document.body.innerHTML = '<div class="flex items-center justify-center h-screen text-white"><p class="text-center"><strong>Configuration Error:</strong><br>Please add your Supabase credentials to the HTML file.</p></div>';
+    }
 
     // Create Supabase client once
-    const supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/brit-native-chat`;
+    const supabaseClient = window.Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
 
@@ -135,8 +141,8 @@
       }
     };
 
-    window.signOut = function() {
-      supabaseClient.auth.signOut();
+    window.signOut = async function() {
+      await supabaseClient.auth.signOut();
       location.reload();
     };
 
