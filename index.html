@@ -14,7 +14,6 @@
 <body class="bg-gray-950 text-white min-h-screen flex flex-col">
   <div class="max-w-2xl mx-auto w-full p-4 flex-1 flex flex-col">
     
-    <!-- Header -->
     <header class="py-6 border-b border-gray-800 flex items-center justify-between">
       <h1 class="text-3xl font-semibold flex items-center gap-3">
         🇬🇧 Brit-Native
@@ -45,7 +44,7 @@
         <div class="flex gap-3">
           <input id="messageInput" type="text" 
                  class="flex-1 bg-gray-900 border border-gray-700 rounded-3xl px-6 py-4 outline-none focus:border-pink-500"
-                 placeholder="Type here... (e.g. Tell me about your day)">
+                 placeholder="Type here...">
           <button onclick="sendMessage()" 
                   class="bg-pink-600 hover:bg-pink-700 px-8 rounded-3xl font-medium">Send</button>
         </div>
@@ -54,10 +53,9 @@
   </div>
 
   <script>
-    // ================== CONFIGURATION (will be replaced by Vercel) ==================
-    // Leave these as placeholders for now
-    const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
-    const SUPABASE_ANON_KEY = "your-anon-public-key-here";
+    // These will be replaced by Vercel at deploy time
+    const SUPABASE_URL = "%%SUPABASE_URL%%";
+    const SUPABASE_ANON_KEY = "%%SUPABASE_ANON_KEY%%";
 
     const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/brit-native-chat`;
@@ -72,10 +70,9 @@
     async function sendMagicLink() {
       const email = document.getElementById('emailInput').value.trim();
       if (!email) return alert("Please enter your email");
-
       const { error } = await supabase.auth.signInWithOtp({ email });
       if (error) alert("Error: " + error.message);
-      else alert("Magic link sent! Please check your email and click the link.");
+      else alert("Magic link sent! Check your email.");
     }
 
     async function checkAuth() {
@@ -90,18 +87,13 @@
       authScreen.classList.add('hidden');
       chatScreen.classList.remove('hidden');
       document.getElementById('signoutBtn').classList.remove('hidden');
-      
-      addMessage('assistant', `Hello mate! I'm Brit-Native, your friendly British English coach. Ready to practise for UK citizenship? What's on your mind today?`);
+      addMessage('assistant', `Hello mate! I'm Brit-Native. Ready to practise British English for UK citizenship? What's on your mind?`);
     }
 
     function addMessage(role, content) {
       const div = document.createElement('div');
       div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-      div.innerHTML = `
-        <div class="message px-5 py-3 rounded-3xl ${role === 'user' ? 'bg-blue-600' : 'bg-gray-800'}">
-          ${content.replace(/\n/g, '<br>')}
-        </div>
-      `;
+      div.innerHTML = `<div class="message px-5 py-3 rounded-3xl ${role === 'user' ? 'bg-blue-600' : 'bg-gray-800'}">${content.replace(/\n/g, '<br>')}</div>`;
       chatDiv.appendChild(div);
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
@@ -121,16 +113,13 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({
-            user_id: currentUser.id,
-            message: tempText
-          })
+          body: JSON.stringify({ user_id: currentUser.id, message: tempText })
         });
-
         const data = await res.json();
-        addMessage('assistant', data.reply || "Sorry, something went wrong mate.");
+        addMessage('assistant', data.reply || "Sorry, something went wrong.");
       } catch (err) {
-        addMessage('assistant', "Couldn't reach the server. Please check your Supabase URL and anon key.");
+        console.error(err);
+        addMessage('assistant', "Connection error – please check deployment.");
       }
     }
 
@@ -139,7 +128,6 @@
       location.reload();
     }
 
-    // Listen for auth state changes (magic link)
     supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         currentUser = session.user;
@@ -147,7 +135,6 @@
       }
     });
 
-    // Start the app
     window.onload = checkAuth;
   </script>
 </body>
